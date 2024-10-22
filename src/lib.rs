@@ -4,12 +4,10 @@ pub mod embed_paginator;
 mod macros;
 pub mod paginate;
 
-use {
-    arbitration_data::model::{dict::LanguageDict, regions::ExportRegions},
-    poise::serenity_prelude::{self, Color, CreateEmbed},
-    std::sync::Arc,
-};
+use std::sync::Arc;
 
+use arbitration_data::model::{dict::LanguageDict, regions::ExportRegions};
+use poise::serenity_prelude::{self, Color, CreateEmbed};
 use warframe::worldstate::prelude as wf;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

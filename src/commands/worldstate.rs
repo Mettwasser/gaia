@@ -6,14 +6,29 @@ use itertools::Itertools;
 use poise::{
     command,
     serenity_prelude::{
-        ButtonStyle, ComponentInteractionCollector, CreateActionRow, CreateButton, CreateEmbed,
-        CreateInteractionResponse, CreateInteractionResponseMessage, FormattedTimestamp,
-        FormattedTimestampStyle, ReactionType, Timestamp,
+        ButtonStyle,
+        ComponentInteractionCollector,
+        CreateActionRow,
+        CreateButton,
+        CreateEmbed,
+        CreateInteractionResponse,
+        CreateInteractionResponseMessage,
+        FormattedTimestamp,
+        FormattedTimestampStyle,
+        ReactionType,
+        Timestamp,
     },
-    CreateReply, ReplyHandle,
+    CreateReply,
+    ReplyHandle,
 };
 use warframe::worldstate::models::{
-    CambionDrift, Cetus, Opposite, OrbVallis, SyndicateJob, SyndicateMission, TimedEvent,
+    CambionDrift,
+    Cetus,
+    Opposite,
+    OrbVallis,
+    SyndicateJob,
+    SyndicateMission,
+    TimedEvent,
 };
 
 use crate::{paginate::Paginate, CmdRet, Context, Error, DEFAULT_COLOR};
@@ -95,6 +110,7 @@ macro_rules! send_worldstate_response {
         do_bounty_pagination($ctx, msg, $faction_name, $bounty_title, embed).await?;
     };
 }
+
 fn create_bounty_embeds(
     title: &str,
     jobs: Vec<SyndicateJob>,

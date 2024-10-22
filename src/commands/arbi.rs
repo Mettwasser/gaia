@@ -1,15 +1,17 @@
-use {
-    crate::{
-        embed_paginator::{LazyEmbedPaginator, LazyPaginationTrait},
-        CmdRet, Context, DEFAULT_COLOR,
-    },
-    arbitration_data::model::mapped::Tier,
-    chrono::Duration,
-    poise::{
-        command,
-        serenity_prelude::{CreateEmbed, FormattedTimestamp, FormattedTimestampStyle, Timestamp},
-        ChoiceParameter, CreateReply,
-    },
+use arbitration_data::model::mapped::Tier;
+use chrono::Duration;
+use poise::{
+    command,
+    serenity_prelude::{CreateEmbed, FormattedTimestamp, FormattedTimestampStyle, Timestamp},
+    ChoiceParameter,
+    CreateReply,
+};
+
+use crate::{
+    embed_paginator::{LazyEmbedPaginator, LazyPaginationTrait},
+    CmdRet,
+    Context,
+    DEFAULT_COLOR,
 };
 
 #[derive(ChoiceParameter, derive_more::Display, Clone, Debug)]
@@ -59,7 +61,7 @@ pub async fn upcoming_arbitration(
                 ))
                 .await?;
                 return Ok(());
-            }
+            },
         }
     } else {
         match ctx.data().arbi_data().upcoming() {
@@ -67,7 +69,7 @@ pub async fn upcoming_arbitration(
             Err(_) => {
                 ctx.say("Could not find any upcoming Arbitrations.").await?;
                 return Ok(());
-            }
+            },
         }
     };
 

@@ -5,7 +5,9 @@ use bot::{
         arbi::{upcoming_arbitration, upcoming_arbitrations},
         worldstate::{cambion_drift, cetus, orb_valis},
     },
-    handle_error, Data, Error,
+    handle_error,
+    Data,
+    Error,
 };
 use poise::{
     serenity_prelude::{ClientBuilder, GatewayIntents, UserId},

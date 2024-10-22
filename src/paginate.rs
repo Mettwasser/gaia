@@ -104,7 +104,7 @@ where
             Some(t) => {
                 self.current_index = at;
                 Some(t)
-            }
+            },
             None => None,
         }
     }
