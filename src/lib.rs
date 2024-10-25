@@ -3,20 +3,21 @@ pub mod commands;
 pub mod embed_paginator;
 mod macros;
 pub mod paginate;
+pub mod utils;
 
 use std::sync::Arc;
 
 use arbitration_data::model::{dict::LanguageDict, regions::ExportRegions};
 use poise::serenity_prelude::{self, Color, CreateEmbed};
+use utils::embed;
 use warframe::worldstate::prelude as wf;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type CmdRet = std::result::Result<(), Error>;
 pub type Context<'a> = poise::Context<'a, Arc<Data>, Error>;
 
-pub const DEFAULT_COLOR: u32 = 0x87CEEB;
+pub const DEFAULT_COLOR: u32 = 0x228b22;
 
-/// https://api.warframe.market/v1/items/{item_url_name}/statistics
 pub struct Data {
     client: wf::Client,
     arbi_data: arbitration_data::ArbitrationData,
@@ -54,7 +55,7 @@ impl Data {
 type FrameworkError<'a> = poise::FrameworkError<'a, Arc<Data>, Error>;
 
 fn error_embed(description: impl Into<String>) -> CreateEmbed {
-    CreateEmbed::new()
+    embed()
         .title("Error")
         .description(description)
         .color(Color::RED)

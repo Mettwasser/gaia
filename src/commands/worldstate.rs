@@ -31,7 +31,7 @@ use warframe::worldstate::models::{
     TimedEvent,
 };
 
-use crate::{paginate::Paginate, CmdRet, Context, Error, DEFAULT_COLOR};
+use crate::{paginate::Paginate, utils::embed, CmdRet, Context, Error};
 
 /// Retrieves the current state of Cetus
 #[command(slash_command)]
@@ -72,7 +72,7 @@ fn create_worldstate_embed<S: Display + Opposite>(
     expiry: DateTime<Utc>,
     thumbnail: &'static str,
 ) -> Result<CreateEmbed, Error> {
-    Ok(CreateEmbed::new()
+    Ok(embed()
         .title(title)
         .field("State", region_state.to_string(), false)
         .field(
@@ -84,8 +84,7 @@ fn create_worldstate_embed<S: Display + Opposite>(
             .to_string(),
             false,
         )
-        .thumbnail(thumbnail)
-        .color(DEFAULT_COLOR))
+        .thumbnail(thumbnail))
 }
 
 #[macro_export]
@@ -119,8 +118,7 @@ fn create_bounty_embeds(
     let mut embeds = Vec::new();
     for job in jobs {
         embeds.push(
-            CreateEmbed::new()
-                .color(DEFAULT_COLOR)
+            embed()
                 .title(title)
                 .description(format!(
                     "**Reward Pool**\n```\n{}\n```",

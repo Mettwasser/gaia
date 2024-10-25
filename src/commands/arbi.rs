@@ -9,9 +9,9 @@ use poise::{
 
 use crate::{
     embed_paginator::{LazyEmbedPaginator, LazyPaginationTrait},
+    utils::embed,
     CmdRet,
     Context,
-    DEFAULT_COLOR,
 };
 
 #[derive(ChoiceParameter, derive_more::Display, Clone, Debug)]
@@ -51,7 +51,7 @@ pub async fn upcoming_arbitration(
         UserArbitrationTier,
     >,
 ) -> CmdRet {
-    let mut embed = CreateEmbed::default().color(DEFAULT_COLOR);
+    let mut embed = embed();
     let arbi_info = if let Some(tier) = tier {
         match ctx.data().arbi_data().upcoming_by_tier(tier.clone().into()) {
             Ok(data) => data,
@@ -176,12 +176,7 @@ async fn get_page(state: PaginationState<'_>, idx: usize) -> Option<CreateEmbed>
             Some(tier) => format!("Upcoming {} Tier Arbitrations", tier),
             None => "Upcoming Arbitrations".to_owned(),
         };
-        Some(
-            CreateEmbed::new()
-                .description(description)
-                .title(title)
-                .color(DEFAULT_COLOR),
-        )
+        Some(embed().description(description).title(title))
     } else {
         None
     }

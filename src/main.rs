@@ -3,6 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use gaia::{
     commands::{
         arbi::{upcoming_arbitration, upcoming_arbitrations},
+        archon_hunt::archon_hunt,
         worldstate::{cambion_drift, cetus, orb_valis},
     },
     handle_error,
@@ -37,6 +38,7 @@ async fn main() -> Result<(), Error> {
                 cambion_drift(),
                 upcoming_arbitration(),
                 upcoming_arbitrations(),
+                archon_hunt(),
             ],
             on_error: |err: FrameworkError<'_, Arc<Data>, Error>| Box::pin(handle_error(err)),
             owners: HashSet::from_iter([UserId::new(350749990681051149)]),
