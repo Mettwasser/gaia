@@ -17,7 +17,7 @@ use poise::{
     ReplyHandle,
 };
 
-use crate::{error_embed, paginate::PaginateLazily, CmdRet, Context, Error};
+use crate::{error_embed, paginate::PaginateEmbedsLazily, CmdRet, Context, Error};
 
 pub trait LazyPaginationTrait<'a> {
     fn ctx(&self) -> Context<'a>;
@@ -58,7 +58,7 @@ impl Page {
 }
 
 pub struct LazyEmbedPaginator<Gen, S> {
-    paginator: PaginateLazily<S, Gen>,
+    paginator: PaginateEmbedsLazily<S, Gen>,
     state: S,
     ids: [String; 6],
 }
@@ -79,7 +79,7 @@ where
             format!("{}_jump_to", state.ctx().id()),
         ];
         Self {
-            paginator: PaginateLazily::new(length, generator, state.clone()),
+            paginator: PaginateEmbedsLazily::new(length, generator, state.clone()),
             state,
             ids,
         }

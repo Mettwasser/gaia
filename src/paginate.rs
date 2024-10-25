@@ -1,5 +1,9 @@
 use std::future::Future;
 
+use moka::future::{Cache, CacheBuilder};
+use poise::serenity_prelude::CreateEmbed;
+
+/// A simple counter that simulates swiping pages
 pub struct Paginate<'a, T> {
     paginate_on: &'a [T],
     current_index: usize,
@@ -60,18 +64,20 @@ impl<'a, T> Paginate<'a, T> {
     }
 }
 
+/// A paginator that uses a generator function to generate embeds dynamically
 #[derive(Debug)]
-pub struct PaginateLazily<S, Gen> {
+pub struct PaginateEmbedsLazily<S, Gen> {
     state: S,
     generator: Gen,
     current_index: usize,
     length: usize,
+    cache: Cache<usize, CreateEmbed>,
 }
 
-impl<'a, S, Fut, Gen, T> PaginateLazily<S, Gen>
+impl<'a, S, Fut, Gen> PaginateEmbedsLazily<S, Gen>
 where
     S: Clone + Send + Sync,
-    Fut: Future<Output = Option<T>>,
+    Fut: Future<Output = Option<CreateEmbed>>,
     Gen: Fn(S, usize) -> Fut,
 {
     pub fn new(length: usize, generator: Gen, state: S) -> Self {
@@ -80,6 +86,7 @@ where
             generator,
             current_index: 0,
             length,
+            cache: CacheBuilder::new(10).build(),
         }
     }
 
@@ -95,12 +102,20 @@ where
         self.current_index
     }
 
-    pub async fn current_page(&self) -> Option<T> {
+    pub async fn current_page(&self) -> Option<CreateEmbed> {
         (self.generator)(self.state.clone(), self.current_index).await
     }
 
-    async fn fetch(&mut self, at: usize) -> Option<T> {
-        match (self.generator)(self.state.clone(), at).await {
+    async fn fetch(&mut self, at: usize) -> Option<CreateEmbed> {
+        self.cache
+            .entry(at)
+            .or_optionally_insert_with(async { (self.generator)(self.state.clone(), at).await })
+            .await
+            .map(|value| value.into_value())
+    }
+
+    async fn fetch_and_set(&mut self, at: usize) -> Option<CreateEmbed> {
+        match self.fetch(at).await {
             Some(t) => {
                 self.current_index = at;
                 Some(t)
@@ -111,25 +126,25 @@ where
 
     /// Increments the internal pointer by 1.
     /// If this pointer exceeds the length of the slice, it won't increment and will return [None].
-    pub async fn next_page(&mut self) -> Option<T> {
-        self.fetch(self.current_index + 1).await
+    pub async fn next_page(&mut self) -> Option<CreateEmbed> {
+        self.fetch_and_set(self.current_index + 1).await
     }
 
     /// Decrements the internal pointer by 1.
     /// If this pointer exceeds the length of the slice, it won't decrement and will return [None].
-    pub async fn previous_page(&mut self) -> Option<T> {
-        self.fetch(self.current_index - 1).await
+    pub async fn previous_page(&mut self) -> Option<CreateEmbed> {
+        self.fetch_and_set(self.current_index - 1).await
     }
 
-    pub async fn first_page(&mut self) -> Option<T> {
-        self.fetch(0).await
+    pub async fn first_page(&mut self) -> Option<CreateEmbed> {
+        self.fetch_and_set(0).await
     }
 
-    pub async fn last_page(&mut self) -> Option<T> {
-        self.fetch(self.length - 1).await
+    pub async fn last_page(&mut self) -> Option<CreateEmbed> {
+        self.fetch_and_set(self.length - 1).await
     }
 
-    pub async fn jump_to(&mut self, to: usize) -> Option<T> {
-        self.fetch(to).await
+    pub async fn jump_to(&mut self, to: usize) -> Option<CreateEmbed> {
+        self.fetch_and_set(to).await
     }
 }

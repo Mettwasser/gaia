@@ -123,14 +123,12 @@ pub async fn upcoming_arbitration(
     Ok(())
 }
 
+const AMOUNT_PER_PAGE: usize = 10;
+
 #[derive(Clone)]
 struct PaginationState<'a> {
     ctx: Context<'a>,
     tier: Option<UserArbitrationTier>,
-}
-
-impl<'a> PaginationState<'a> {
-    const AMOUNT_PER_PAGE: usize = 10;
 }
 
 impl<'a> LazyPaginationTrait<'a> for PaginationState<'a> {
@@ -147,8 +145,8 @@ async fn get_page(state: PaginationState<'_>, idx: usize) -> Option<CreateEmbed>
         "Node", "Planet"
     ));
 
-    let skip = PaginationState::AMOUNT_PER_PAGE * idx;
-    let take = PaginationState::AMOUNT_PER_PAGE;
+    let skip = AMOUNT_PER_PAGE * idx;
+    let take = AMOUNT_PER_PAGE;
     for (key, value) in arbi_data
         .iter_upcoming()
         .filter(|(_k, v)| {
@@ -211,7 +209,7 @@ pub async fn upcoming_arbitrations(
                 .unwrap_or(true)
         })
         .count()
-        / PaginationState::AMOUNT_PER_PAGE;
+        / AMOUNT_PER_PAGE;
 
     let mut paginator = LazyEmbedPaginator::new(get_page, paginator_length, state);
     paginator.start(Duration::minutes(2)).await?;

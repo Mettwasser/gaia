@@ -1,6 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
-use bot::{
+use gaia::{
     commands::{
         arbi::{upcoming_arbitration, upcoming_arbitrations},
         worldstate::{cambion_drift, cetus, orb_valis},

@@ -198,7 +198,7 @@ async fn do_bounty_pagination(
 ) -> CmdRet {
     let interaction_id = format!("{}_bounty", ctx.id());
     if let Some(bounty_press) = ComponentInteractionCollector::new(ctx.serenity_context())
-        .timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(30))
         .author_id(ctx.author().id)
         .channel_id(ctx.channel_id())
         .filter(move |mci| mci.data.custom_id == interaction_id)
@@ -248,7 +248,7 @@ async fn do_bounty_pagination(
         let ctx_id = ctx.id();
 
         while let Some(press) = ComponentInteractionCollector::new(ctx.serenity_context())
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(30))
             .author_id(ctx.author().id)
             .channel_id(ctx.channel_id())
             .filter(move |interaction| interaction.data.custom_id.starts_with(&ctx_id.to_string()))
