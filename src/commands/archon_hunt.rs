@@ -6,7 +6,7 @@ use poise::{
     serenity_prelude::{CreateEmbed, FormattedTimestampStyle},
     CreateReply,
 };
-use warframe::worldstate::models::{ArchonHunt, ArchonHuntMission, TimedEvent};
+use warframe::worldstate::{queryable::ArchonHunt, ArchonHuntMission, TimedEvent};
 
 use crate::{
     utils::{embed, to_timestamp},

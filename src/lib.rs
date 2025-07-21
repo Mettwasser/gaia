@@ -1,25 +1,26 @@
 pub mod closest;
 pub mod commands;
-pub mod embed_paginator;
-mod macros;
-pub mod paginate;
 pub mod utils;
 
 use std::sync::Arc;
 
-use arbitration_data::model::{dict::LanguageDict, regions::ExportRegions};
-use poise::serenity_prelude::{self, Color, CreateEmbed};
-use utils::embed;
-use warframe::worldstate::prelude as wf;
+use arbitration_data::model::{
+    dict::LanguageDict,
+    regions::ExportRegions,
+};
+use poise::serenity_prelude::{
+    self,
+};
+use warframe::worldstate;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type CmdRet = std::result::Result<(), Error>;
-pub type Context<'a> = poise::Context<'a, Arc<Data>, Error>;
+pub type Context<'a> = poise::ApplicationContext<'a, Arc<Data>, Error>;
 
 pub const DEFAULT_COLOR: u32 = 0x228b22;
 
 pub struct Data {
-    client: wf::Client,
+    client: worldstate::Client,
     arbi_data: arbitration_data::ArbitrationData,
 }
 
@@ -38,12 +39,12 @@ impl Data {
         )?;
 
         Ok(Self {
-            client: wf::Client::new(),
+            client: worldstate::Client::new(),
             arbi_data,
         })
     }
 
-    pub fn client(&self) -> &wf::Client {
+    pub fn worldstate_client(&self) -> &worldstate::Client {
         &self.client
     }
 
@@ -53,13 +54,6 @@ impl Data {
 }
 
 type FrameworkError<'a> = poise::FrameworkError<'a, Arc<Data>, Error>;
-
-fn error_embed(description: impl Into<String>) -> CreateEmbed {
-    embed()
-        .title("Error")
-        .description(description)
-        .color(Color::RED)
-}
 
 pub async fn handle_error(err: FrameworkError<'_>) {
     tracing::error!(error = %err);
@@ -73,7 +67,7 @@ pub async fn handle_error(err: FrameworkError<'_>) {
 
 pub async fn handle_command_error(
     err: Error,
-    ctx: Context<'_>,
+    ctx: poise::Context<'_, Arc<Data>, Error>,
 ) -> Result<(), serenity_prelude::Error> {
     poise::builtins::on_error(poise::FrameworkError::new_command(ctx, err))
         .await

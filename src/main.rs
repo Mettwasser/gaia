@@ -1,17 +1,27 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{
+    collections::HashSet,
+    sync::Arc,
+};
 
 use gaia::{
     commands::{
-        arbi::{upcoming_arbitration, upcoming_arbitrations},
+        arbi::{
+            upcoming_arbitration,
+            upcoming_arbitrations,
+        },
         archon_hunt::archon_hunt,
-        worldstate::{cambion_drift, cetus, orb_valis},
+        worldstate::worldstate,
     },
     handle_error,
     Data,
     Error,
 };
 use poise::{
-    serenity_prelude::{ClientBuilder, GatewayIntents, UserId},
+    serenity_prelude::{
+        ClientBuilder,
+        GatewayIntents,
+        UserId,
+    },
     FrameworkError,
 };
 
@@ -33,9 +43,7 @@ async fn main() -> Result<(), Error> {
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
-                cetus(),
-                orb_valis(),
-                cambion_drift(),
+                worldstate(),
                 upcoming_arbitration(),
                 upcoming_arbitrations(),
                 archon_hunt(),
