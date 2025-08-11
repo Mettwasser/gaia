@@ -1,16 +1,13 @@
 pub mod closest;
 pub mod commands;
+pub mod notifier;
 pub mod utils;
 
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
-use arbitration_data::model::{
-    dict::LanguageDict,
-    regions::ExportRegions,
-};
-use poise::serenity_prelude::{
-    self,
-};
+use arbitration_data::model::{dict::LanguageDict, regions::ExportRegions};
+use poise::serenity_prelude;
+use sqlx::SqlitePool;
 use warframe::worldstate;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -22,10 +19,11 @@ pub const DEFAULT_COLOR: u32 = 0x228b22;
 pub struct Data {
     client: worldstate::Client,
     arbi_data: arbitration_data::ArbitrationData,
+    db: SqlitePool,
 }
 
 impl Data {
-    pub fn try_new_auto() -> Result<Self, Error> {
+    pub fn try_new_auto(pool: SqlitePool) -> Result<Self, Error> {
         let arbi_time_node_mapping =
             csv::Reader::from_reader(include_str!("../arbys.csv").as_bytes());
         let export_regions: ExportRegions<'_> =
@@ -41,6 +39,7 @@ impl Data {
         Ok(Self {
             client: worldstate::Client::new(),
             arbi_data,
+            db: pool,
         })
     }
 
@@ -50,6 +49,14 @@ impl Data {
 
     pub fn arbi_data(&self) -> &arbitration_data::ArbitrationData {
         &self.arbi_data
+    }
+
+    pub fn db(&self) -> &SqlitePool {
+        &self.db
+    }
+
+    pub fn db_owned(&self) -> SqlitePool {
+        self.db.clone()
     }
 }
 
@@ -74,4 +81,17 @@ pub async fn handle_command_error(
         .unwrap();
 
     Ok(())
+}
+
+pub async fn init_db() -> Result<SqlitePool, Error> {
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL env var not set");
+    let pool = SqlitePool::connect(&db_url).await?;
+
+    migrate(&pool).await?;
+
+    Ok(pool)
+}
+
+async fn migrate(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+    Ok(sqlx::migrate!("./migrations").run(pool).await?)
 }

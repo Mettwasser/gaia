@@ -68,10 +68,10 @@ fn create_archon_hunt_embed(
 
             __**{}** on **{}**__
             Level: 130-135
-            
+
             __**{}** on **{}**__
             Level: 135-140
-            
+
             __**{}** on **{}**__
             Level: 145-150
 

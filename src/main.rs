@@ -1,27 +1,19 @@
-use std::{
-    collections::HashSet,
-    sync::Arc,
-};
+use std::{collections::HashSet, sync::Arc};
 
 use gaia::{
     commands::{
-        arbi::{
-            upcoming_arbitration,
-            upcoming_arbitrations,
-        },
+        arbi::{upcoming_arbitration, upcoming_arbitrations},
         archon_hunt::archon_hunt,
         worldstate::worldstate,
     },
     handle_error,
+    init_db,
+    notifier,
     Data,
     Error,
 };
 use poise::{
-    serenity_prelude::{
-        ClientBuilder,
-        GatewayIntents,
-        UserId,
-    },
+    serenity_prelude::{ClientBuilder, GatewayIntents, UserId},
     FrameworkError,
 };
 
@@ -36,9 +28,9 @@ async fn main() -> Result<(), Error> {
     let token = std::env::var("BOT_TOKEN").expect("missing DISCORD_TOKEN");
     let intents = GatewayIntents::privileged().difference(GatewayIntents::MESSAGE_CONTENT);
 
-    let data = Arc::new(Data::try_new_auto()?);
+    let db = init_db().await?;
 
-    let data_clone = data.clone();
+    let data = Arc::new(Data::try_new_auto(db)?);
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -47,6 +39,7 @@ async fn main() -> Result<(), Error> {
                 upcoming_arbitration(),
                 upcoming_arbitrations(),
                 archon_hunt(),
+                notifier::commands::notifier(),
             ],
             on_error: |err: FrameworkError<'_, Arc<Data>, Error>| Box::pin(handle_error(err)),
             owners: HashSet::from_iter([UserId::new(350749990681051149)]),
@@ -55,8 +48,8 @@ async fn main() -> Result<(), Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-
-                Ok(data_clone)
+                notifier::setup(ctx.clone(), data.clone())?;
+                Ok(data)
             })
         })
         .build();
