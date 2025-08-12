@@ -16,7 +16,7 @@ sqlx migration run
 Additionally, you need to export an environment variable (or use a `.env` file)
 which export the following variables:
 
-```toml
+```ini
 BOT_TOKEN=<YOUR TOKEN HERE>
 DATABASE_URL=sqlite://dev.db
 ```
