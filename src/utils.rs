@@ -35,7 +35,7 @@ pub trait ApplyIf: Sized {
         F: FnOnce(Self) -> T,
         T: Into<Self>;
 
-    fn apply_optional<F, T, U>(self, optional: Option<T>, f: F) -> Self
+    fn apply_optionally<F, T, U>(self, optional: Option<T>, f: F) -> Self
     where
         F: FnOnce(Self, T) -> U,
         U: Into<Self>;
@@ -54,7 +54,7 @@ impl<T> ApplyIf for T {
         }
     }
 
-    fn apply_optional<F, I, U>(self, optional: Option<I>, f: F) -> Self
+    fn apply_optionally<F, I, U>(self, optional: Option<I>, f: F) -> Self
     where
         F: FnOnce(Self, I) -> U,
         U: Into<Self>,
@@ -93,7 +93,7 @@ pub trait DbExtension {
     fn delete_subscription(
         &self,
         subscription: SubscriptionType,
-        guild: i64,
+        guild_id: i64,
     ) -> impl Future<Output = Result<(), sqlx::Error>> + Send;
 
     fn get_subscriptions(
@@ -105,6 +105,11 @@ pub trait DbExtension {
         &self,
         guild_id: i64,
     ) -> impl Future<Output = Result<Vec<ServerSubscription>, sqlx::Error>> + Send;
+
+    fn delete_all_subscriptions(
+        &self,
+        guild_id: i64,
+    ) -> impl Future<Output = Result<(), sqlx::Error>> + Send;
 }
 
 impl DbExtension for SqlitePool {
@@ -214,5 +219,23 @@ impl DbExtension for SqlitePool {
         )
         .fetch_all(self)
         .await
+    }
+
+    async fn delete_all_subscriptions(&self, guild_id: i64) -> Result<(), sqlx::Error> {
+        let mut tx = self.begin().await?;
+
+        sqlx::query!(
+            "
+            DELETE FROM server_subscriptions
+            WHERE server_id = $1;
+            ",
+            guild_id
+        )
+        .execute(tx.as_mut())
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(())
     }
 }

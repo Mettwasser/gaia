@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
+use arbitration_data::model::mapped::ArbitrationInfo;
 use chrono::Utc;
+use futures::future::join_all;
 use poise::serenity_prelude::{
     self,
-    async_trait,
+    CreateEmbed,
     CreateMessage,
     FormattedTimestamp,
     FormattedTimestampStyle,
@@ -14,55 +16,72 @@ use poise::serenity_prelude::{
 use crate::{
     notifier::{model::SubscriptionType, Notifier},
     utils::{self, ApplyIf, DbExtension},
-    Data,
+    AppData,
     Error,
 };
 
+fn build_embed(arbi: &ArbitrationInfo) -> CreateEmbed {
+    utils::embed()
+        .title("New S-Tier Arbitration")
+        .field("Node", format!("{} ({})", &arbi.node, &arbi.planet), true)
+        .field("Mission Type", &arbi.mission_type, true)
+        .field(
+            "Ends",
+            FormattedTimestamp::new(
+                arbi.expiry.into(),
+                Some(FormattedTimestampStyle::RelativeTime),
+            )
+            .to_string(),
+            false,
+        )
+        .timestamp(Timestamp::now())
+}
+
 pub struct STierArbitrationListener;
 
-#[async_trait]
 impl Notifier for STierArbitrationListener {
-    async fn run(&self, ctx: serenity_prelude::Context, data: Arc<Data>) -> Result<(), Error> {
-        let db = data.db();
-        let arbi_data = data.arbi_data();
-        while let Ok(next_arbi) = arbi_data.upcoming_by_tier(arbitration_data::Tier::S) {
+    async fn run(ctx: serenity_prelude::Context, data: Arc<AppData>) -> Result<(), Error> {
+        while let Ok(next_arbi) = data.arbi_data().upcoming_by_tier(arbitration_data::Tier::S) {
             if next_arbi.activation > Utc::now() {
                 tracing::info!(time_to_sleep = ?(next_arbi.activation - Utc::now()).to_std()?, upcoming_arbi = ?next_arbi);
                 tokio::time::sleep((next_arbi.activation - Utc::now()).to_std()?).await;
             }
 
-            let subscriptions = db
+            let subscriptions = data
+                .db()
                 .get_subscriptions(SubscriptionType::STierArbitrations)
                 .await?;
 
-            for subscription in subscriptions {
-                subscription
-                    .notification_channel_id
-                    .send_message(
-                        &ctx,
-                        CreateMessage::new()
-                            .apply_optional(subscription.role_id_to_mention, |msg, role_id| {
-                                msg.content(role_id.mention().to_string())
-                            })
-                            .add_embed(
-                                utils::embed()
-                                    .title("New S-Tier Arbitration")
-                                    .field("Node", next_arbi.node.as_str(), true)
-                                    .field("Planet", next_arbi.planet.as_str(), true)
-                                    .field(
-                                        "Ends",
-                                        FormattedTimestamp::new(
-                                            next_arbi.expiry.into(),
-                                            Some(FormattedTimestampStyle::RelativeTime),
-                                        )
-                                        .to_string(),
-                                        false,
-                                    )
-                                    .timestamp(Timestamp::now()),
-                            ),
-                    )
-                    .await?;
-            }
+            let embed = build_embed(next_arbi);
+
+            let notification_tasks = subscriptions
+                .iter()
+                .map(|sub| async {
+                    let result = sub
+                        .notification_channel_id
+                        .send_message(
+                            &ctx,
+                            CreateMessage::new()
+                                .apply_optionally(sub.role_id_to_mention, |msg, role_id| {
+                                    msg.content(role_id.mention().to_string())
+                                })
+                                .add_embed(embed.clone()),
+                        )
+                        .await;
+
+                    if let Err(e) = &result {
+                        tracing::error!(
+                            channel_id = %sub.notification_channel_id,
+                            error = %e,
+                            "Failed to send notification for S-Tier Arbitration",
+                        );
+                    }
+
+                    result
+                })
+                .collect::<Vec<_>>();
+
+            join_all(notification_tasks).await;
         }
 
         Ok(())

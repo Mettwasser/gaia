@@ -23,6 +23,7 @@ pub async fn notifier(_: Context<'_>) -> CmdRet {
     Ok(())
 }
 
+/// Subscribe to a specific warframe event and send notifications when that event happens.
 #[command(slash_command)]
 pub async fn setup(
     ctx: Context<'_>,
@@ -68,6 +69,7 @@ pub async fn setup(
     Ok(())
 }
 
+/// Unsubscribe from a specific event
 #[command(slash_command)]
 pub async fn remove(
     ctx: Context<'_>,
@@ -93,6 +95,26 @@ pub async fn remove(
     Ok(())
 }
 
+/// Unsubscribe from ALL events
+#[command(slash_command)]
+pub async fn remove_all(ctx: Context<'_>) -> CmdRet {
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
+
+    ctx.db().delete_all_subscriptions(guild_id).await?;
+
+    ctx.send(
+        CreateReply::default().reply(true).embed(
+            utils::embed()
+                .title("Successfully Unsubscribed")
+                .description("You will no longer receive notifications in this server."),
+        ),
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// List current subscriptions in the server.
 #[command(slash_command)]
 pub async fn list(ctx: Context<'_>) -> CmdRet {
     let guild_id = ctx.guild_id().unwrap().get() as i64;

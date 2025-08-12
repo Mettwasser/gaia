@@ -9,20 +9,22 @@ use gaia::{
     handle_error,
     init_db,
     notifier,
-    Data,
+    utils::DbExtension,
+    AppData,
     Error,
 };
 use poise::{
-    serenity_prelude::{ClientBuilder, GatewayIntents, UserId},
+    serenity_prelude::{self, ClientBuilder, FullEvent, GatewayIntents, UserId},
+    FrameworkContext,
     FrameworkError,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    dotenv::dotenv().unwrap();
+    dotenv::dotenv().ok();
     tracing_subscriber::fmt()
         .pretty()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(tracing::Level::DEBUG)
         .init();
 
     let token = std::env::var("BOT_TOKEN").expect("missing DISCORD_TOKEN");
@@ -30,7 +32,7 @@ async fn main() -> Result<(), Error> {
 
     let db = init_db().await?;
 
-    let data = Arc::new(Data::try_new_auto(db)?);
+    let data = Arc::new(AppData::try_new_auto(db)?);
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -41,7 +43,10 @@ async fn main() -> Result<(), Error> {
                 archon_hunt(),
                 notifier::commands::notifier(),
             ],
-            on_error: |err: FrameworkError<'_, Arc<Data>, Error>| Box::pin(handle_error(err)),
+            event_handler: |ctx, event, framework, data| {
+                Box::pin(event_handler(ctx, event, framework, data))
+            },
+            on_error: |err: FrameworkError<'_, Arc<AppData>, Error>| Box::pin(handle_error(err)),
             owners: HashSet::from_iter([UserId::new(350749990681051149)]),
             ..Default::default()
         })
@@ -49,6 +54,7 @@ async fn main() -> Result<(), Error> {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 notifier::setup(ctx.clone(), data.clone())?;
+
                 Ok(data)
             })
         })
@@ -60,6 +66,22 @@ async fn main() -> Result<(), Error> {
         .unwrap();
 
     client.start().await.unwrap();
+
+    Ok(())
+}
+
+async fn event_handler(
+    _ctx: &serenity_prelude::Context,
+    event: &FullEvent,
+    _framework: FrameworkContext<'_, Arc<AppData>, Error>,
+    data: &Arc<AppData>,
+) -> Result<(), Error> {
+    // Remove all db entries for that guild upon the bot leaving/guild being deleted
+    if let FullEvent::GuildDelete { incomplete, .. } = event {
+        data.db()
+            .delete_all_subscriptions(incomplete.id.get() as i64)
+            .await?
+    }
 
     Ok(())
 }

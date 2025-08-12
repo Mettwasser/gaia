@@ -12,17 +12,17 @@ use warframe::worldstate;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type CmdRet = std::result::Result<(), Error>;
-pub type Context<'a> = poise::ApplicationContext<'a, Arc<Data>, Error>;
+pub type Context<'a> = poise::ApplicationContext<'a, Arc<AppData>, Error>;
 
 pub const DEFAULT_COLOR: u32 = 0x228b22;
 
-pub struct Data {
-    client: worldstate::Client,
+pub struct AppData {
+    worldstate: worldstate::Client,
     arbi_data: arbitration_data::ArbitrationData,
     db: SqlitePool,
 }
 
-impl Data {
+impl AppData {
     pub fn try_new_auto(pool: SqlitePool) -> Result<Self, Error> {
         let arbi_time_node_mapping =
             csv::Reader::from_reader(include_str!("../arbys.csv").as_bytes());
@@ -37,14 +37,14 @@ impl Data {
         )?;
 
         Ok(Self {
-            client: worldstate::Client::new(),
+            worldstate: worldstate::Client::new(),
             arbi_data,
             db: pool,
         })
     }
 
     pub fn worldstate_client(&self) -> &worldstate::Client {
-        &self.client
+        &self.worldstate
     }
 
     pub fn arbi_data(&self) -> &arbitration_data::ArbitrationData {
@@ -60,7 +60,7 @@ impl Data {
     }
 }
 
-type FrameworkError<'a> = poise::FrameworkError<'a, Arc<Data>, Error>;
+type FrameworkError<'a> = poise::FrameworkError<'a, Arc<AppData>, Error>;
 
 pub async fn handle_error(err: FrameworkError<'_>) {
     tracing::error!(error = %err);
@@ -74,7 +74,7 @@ pub async fn handle_error(err: FrameworkError<'_>) {
 
 pub async fn handle_command_error(
     err: Error,
-    ctx: poise::Context<'_, Arc<Data>, Error>,
+    ctx: poise::Context<'_, Arc<AppData>, Error>,
 ) -> Result<(), serenity_prelude::Error> {
     poise::builtins::on_error(poise::FrameworkError::new_command(ctx, err))
         .await

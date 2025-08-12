@@ -1,17 +1,26 @@
 use std::ops::Deref;
 
 use chrono::Utc;
+use derive_more::Display;
 use poise::serenity_prelude::{ChannelId, GuildId, RoleId};
 use sqlx::{error::BoxDynError, Decode, Sqlite};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, sqlx::Type, poise::ChoiceParameter)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, sqlx::Type, poise::ChoiceParameter,
+)]
 #[repr(i64)]
 pub enum SubscriptionType {
     #[name = "S-Tier Arbitrations"]
     STierArbitrations,
+
+    #[name = "Steel Path Disruption Fissures"]
+    SteelPathDisruptionFissures,
+
+    #[name = "Eidolon Hunts"]
+    EidolonHunts,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub struct ServerId(GuildId);
 
 impl From<i64> for ServerId {
@@ -28,7 +37,7 @@ impl Deref for ServerId {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub struct NotificationChannelId(ChannelId);
 
 impl From<i64> for NotificationChannelId {
@@ -45,7 +54,7 @@ impl Deref for NotificationChannelId {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Display)]
 pub struct RoleIdToMention(RoleId);
 
 impl Decode<'_, Sqlite> for RoleIdToMention {
@@ -63,7 +72,7 @@ impl Deref for RoleIdToMention {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ServerSubscription {
     pub server_id: ServerId,
     pub notification_channel_id: NotificationChannelId,
