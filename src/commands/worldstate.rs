@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use futures::StreamExt;
 use itertools::Itertools;
 use poise::{
+    CreateReply,
     command,
     serenity_prelude::{
         ButtonStyle,
@@ -18,17 +19,16 @@ use poise::{
         FormattedTimestampStyle,
         Timestamp,
     },
-    CreateReply,
 };
-use poise_paginator::{paginate, CancellationType};
+use poise_paginator::{CancellationType, paginate};
 use warframe::worldstate::{
-    queryable::{CambionDrift, Cetus, OrbVallis},
     Opposite,
     SyndicateMission,
     TimedEvent,
+    queryable::{CambionDrift, Cetus, OrbVallis},
 };
 
-use crate::{utils::embed, CmdRet, Context, Error};
+use crate::{CmdRet, Context, Error, utils::embed};
 
 #[command(
     slash_command,
@@ -42,7 +42,7 @@ pub async fn worldstate(_: Context<'_>) -> CmdRet {
 /// Retrieves the current state of Cetus
 #[command(slash_command)]
 pub async fn cetus(ctx: Context<'_>) -> CmdRet {
-    let wf = ctx.data().worldstate_client();
+    let wf = ctx.data().worldstate();
     let worldstate_item = wf.fetch::<Cetus>().await?;
 
     let embed = create_worldstate_embed(
@@ -60,7 +60,7 @@ pub async fn cetus(ctx: Context<'_>) -> CmdRet {
 /// Retrieves the current state of the Orb Vallis
 #[command(slash_command, rename = "orb-vallis")]
 pub async fn orb_vallis(ctx: Context<'_>) -> CmdRet {
-    let wf = ctx.data().worldstate_client();
+    let wf = ctx.data().worldstate();
     let worldstate_item = wf.fetch::<OrbVallis>().await?;
 
     let embed = create_worldstate_embed(
@@ -78,7 +78,7 @@ pub async fn orb_vallis(ctx: Context<'_>) -> CmdRet {
 /// Retrieves the current state of the Cambion Drift
 #[command(slash_command, rename = "cambion-drift")]
 pub async fn cambion_drift(ctx: Context<'_>) -> CmdRet {
-    let wf = ctx.data().worldstate_client();
+    let wf = ctx.data().worldstate();
     let worldstate_item = wf.fetch::<CambionDrift>().await?;
 
     let embed = create_worldstate_embed(
@@ -123,7 +123,7 @@ async fn send_worldstate(
     if let Some(press) = collector.next().await {
         let mission = ctx
             .data()
-            .worldstate_client()
+            .worldstate()
             .fetch::<SyndicateMission>()
             .await?
             .into_iter()
@@ -207,10 +207,14 @@ async fn generate_bounty_embed(
 
     let embed = embed()
         .title(state.title)
-        .description(format!(
-            "**Reward Pool**\n```\n{}\n```",
-            job.reward_pool.join("\n")
-        ))
+        .field(
+            "Reward Pool",
+            job.reward_pool
+                .iter()
+                .map(|reward| format!("- {reward}"))
+                .join("\n"),
+            false,
+        )
         .field(
             "Ends",
             FormattedTimestamp::new(

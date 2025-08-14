@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use futures::future::join_all;
 use poise::serenity_prelude::{
     self,
@@ -39,8 +37,8 @@ fn build_embed(fissure: &Fissure) -> CreateEmbed {
 pub struct SteelPathDisruptionFissuresListener;
 
 impl Notifier for SteelPathDisruptionFissuresListener {
-    async fn run(ctx: serenity_prelude::Context, data: Arc<AppData>) -> Result<(), Error> {
-        data.worldstate
+    async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+        data.worldstate()
             .call_on_nested_update_with_state::<_, Fissure, _>(callback, (ctx, data.clone()))
             .await
             .map_err(Error::from)
@@ -48,7 +46,7 @@ impl Notifier for SteelPathDisruptionFissuresListener {
 }
 
 async fn callback(
-    (ctx, data): (serenity_prelude::Context, Arc<AppData>),
+    (ctx, data): (serenity_prelude::Context, AppData),
     fissure: &Fissure,
     change: Change,
 ) {

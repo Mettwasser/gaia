@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use futures::future::join_all;
 use poise::serenity_prelude::{
     self,
@@ -40,19 +38,15 @@ fn build_embed(cetus: &Cetus) -> CreateEmbed {
 pub struct EidolonHunts;
 
 impl Notifier for EidolonHunts {
-    async fn run(ctx: serenity_prelude::Context, data: Arc<AppData>) -> Result<(), Error> {
-        data.worldstate
+    async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+        data.worldstate()
             .call_on_update_with_state::<_, Cetus, _>(callback, (ctx, data.clone()))
             .await
             .map_err(Error::from)
     }
 }
 
-async fn callback(
-    (ctx, data): (serenity_prelude::Context, Arc<AppData>),
-    _: &Cetus,
-    cetus: &Cetus,
-) {
+async fn callback((ctx, data): (serenity_prelude::Context, AppData), _: &Cetus, cetus: &Cetus) {
     if cetus.state == CetusState::Day {
         return;
     }

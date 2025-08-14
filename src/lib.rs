@@ -3,23 +3,34 @@ pub mod commands;
 pub mod notifier;
 pub mod utils;
 
-use std::{env, sync::Arc};
+use std::{env, path::PathBuf, sync::Arc, time::Duration};
 
 use arbitration_data::model::{dict::LanguageDict, regions::ExportRegions};
-use poise::serenity_prelude;
+use derive_more::Debug;
+use moka::future::Cache;
+use poise::{
+    CreateReply,
+    serenity_prelude::{self, CreateEmbed, colours::roles::DARK_RED},
+};
 use sqlx::SqlitePool;
-use warframe::worldstate;
+use warframe::{market, worldstate};
+
+use crate::commands::market::average::Statistics;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type CmdRet = std::result::Result<(), Error>;
-pub type Context<'a> = poise::ApplicationContext<'a, Arc<AppData>, Error>;
+pub type Context<'a> = poise::ApplicationContext<'a, AppData, Error>;
 
 pub const DEFAULT_COLOR: u32 = 0x228b22;
 
+#[derive(Clone, Debug)]
 pub struct AppData {
     worldstate: worldstate::Client,
-    arbi_data: arbitration_data::ArbitrationData,
+    market: Arc<market::Client>,
+    #[debug(skip)]
+    arbi_data: Arc<arbitration_data::ArbitrationData>,
     db: SqlitePool,
+    market_statistic_cache: Cache<String, Statistics>,
 }
 
 impl AppData {
@@ -38,13 +49,26 @@ impl AppData {
 
         Ok(Self {
             worldstate: worldstate::Client::new(),
-            arbi_data,
+            market: Arc::new(market::Client::new()),
+            arbi_data: Arc::new(arbi_data),
             db: pool,
+            market_statistic_cache: Cache::builder()
+                .time_to_live(Duration::from_secs(60 * 60))
+                .max_capacity(1000)
+                .build(),
         })
     }
 
-    pub fn worldstate_client(&self) -> &worldstate::Client {
+    pub fn worldstate(&self) -> &worldstate::Client {
         &self.worldstate
+    }
+
+    pub fn market(&self) -> &market::Client {
+        &self.market
+    }
+
+    pub fn market_statistic_cache(&self) -> &Cache<String, Statistics> {
+        &self.market_statistic_cache
     }
 
     pub fn arbi_data(&self) -> &arbitration_data::ArbitrationData {
@@ -60,7 +84,7 @@ impl AppData {
     }
 }
 
-type FrameworkError<'a> = poise::FrameworkError<'a, Arc<AppData>, Error>;
+type FrameworkError<'a> = poise::FrameworkError<'a, AppData, Error>;
 
 pub async fn handle_error(err: FrameworkError<'_>) {
     tracing::error!(error = %err);
@@ -74,16 +98,29 @@ pub async fn handle_error(err: FrameworkError<'_>) {
 
 pub async fn handle_command_error(
     err: Error,
-    ctx: poise::Context<'_, Arc<AppData>, Error>,
+    ctx: poise::Context<'_, AppData, Error>,
 ) -> Result<(), serenity_prelude::Error> {
-    poise::builtins::on_error(poise::FrameworkError::new_command(ctx, err))
-        .await
-        .unwrap();
+    ctx.send(
+        CreateReply::default().embed(
+            CreateEmbed::default()
+                .title("Error")
+                .description(err.to_string())
+                .color(DARK_RED),
+        ),
+    )
+    .await?;
 
     Ok(())
 }
 
 pub async fn init_db() -> Result<SqlitePool, Error> {
+    let db_path = PathBuf::from(env::var("DATABASE_PATH").expect("DATABASE_PATH env var not set"));
+
+    if !db_path.exists() {
+        tracing::info!("Database file does not exist, creating a new one.");
+        tokio::fs::File::create(db_path).await?;
+    }
+
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL env var not set");
     let pool = SqlitePool::connect(&db_url).await?;
 

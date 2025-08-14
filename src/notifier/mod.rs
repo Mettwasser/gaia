@@ -1,4 +1,10 @@
-use std::{future::Future, sync::Arc};
+pub mod commands;
+pub mod eidolon_hunts;
+pub mod model;
+pub mod s_tier_arbitrations;
+pub mod sp_disruption_fissure;
+
+use std::future::Future;
 
 use poise::serenity_prelude::{self};
 
@@ -12,20 +18,14 @@ use crate::{
     Error,
 };
 
-pub mod commands;
-pub mod eidolon_hunts;
-pub mod model;
-pub mod s_tier_arbitrations;
-pub mod sp_disruption_fissure;
-
 pub trait Notifier {
     fn run(
         ctx: serenity_prelude::Context,
-        data: Arc<AppData>,
+        data: AppData,
     ) -> impl Future<Output = Result<(), Error>> + Send + 'static;
 }
 
-pub fn setup(ctx: serenity_prelude::Context, data: Arc<AppData>) -> Result<(), Error> {
+pub fn setup(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
     spawn_notifier::<STierArbitrationListener>(&ctx, &data)?;
     spawn_notifier::<SteelPathDisruptionFissuresListener>(&ctx, &data)?;
     spawn_notifier::<EidolonHunts>(&ctx, &data)?;
@@ -33,7 +33,7 @@ pub fn setup(ctx: serenity_prelude::Context, data: Arc<AppData>) -> Result<(), E
     Ok(())
 }
 
-fn spawn_notifier<T>(ctx: &serenity_prelude::Context, data: &Arc<AppData>) -> Result<(), Error>
+fn spawn_notifier<T>(ctx: &serenity_prelude::Context, data: &AppData) -> Result<(), Error>
 where
     T: Notifier + Send + 'static,
 {

@@ -37,7 +37,7 @@ impl ArchonShard {
 
 #[command(slash_command, rename = "archon-hunt")]
 pub async fn archon_hunt(ctx: Context<'_>) -> CmdRet {
-    let archon_hunt = ctx.data().worldstate.fetch::<ArchonHunt>().await?;
+    let archon_hunt = ctx.data().worldstate().fetch::<ArchonHunt>().await?;
     let missions = &archon_hunt.missions;
     let obtainable_shard = ArchonShard::from_boss_str(&archon_hunt.boss);
 

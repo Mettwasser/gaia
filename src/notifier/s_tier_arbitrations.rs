@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use arbitration_data::model::mapped::ArbitrationInfo;
 use chrono::Utc;
 use futures::future::join_all;
@@ -40,7 +38,7 @@ fn build_embed(arbi: &ArbitrationInfo) -> CreateEmbed {
 pub struct STierArbitrationListener;
 
 impl Notifier for STierArbitrationListener {
-    async fn run(ctx: serenity_prelude::Context, data: Arc<AppData>) -> Result<(), Error> {
+    async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
         while let Ok(next_arbi) = data.arbi_data().upcoming_by_tier(arbitration_data::Tier::S) {
             if next_arbi.activation > Utc::now() {
                 tracing::info!(time_to_sleep = ?(next_arbi.activation - Utc::now()).to_std()?, upcoming_arbi = ?next_arbi);
