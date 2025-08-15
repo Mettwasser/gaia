@@ -1,11 +1,15 @@
-use std::cmp::Reverse;
-
-use poise::{CreateReply, command, serenity_prelude::AutocompleteChoice};
+use poise::{CreateReply, command};
 use reqwest::StatusCode;
-use strsim::jaro_winkler;
-use warframe::market::{Language, Slug};
+use warframe::market::Slug;
 
-use crate::{CmdRet, Context, Error, utils};
+use crate::{
+    CmdRet,
+    Context,
+    Error,
+    commands::market::{I18nEn, find_best_matches, market_url},
+    emojis,
+    utils,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 struct StatisticInfo {
@@ -28,37 +32,6 @@ impl From<Vec<Statistic>> for StatisticInfo {
             amount_sold,
         }
     }
-}
-
-async fn find_best_matches(ctx: Context<'_>, query: &str) -> Vec<AutocompleteChoice> {
-    // Get all candidate items first
-    let candidates = ctx.data().market().items(Language::En).await.unwrap();
-
-    // 1. Map each candidate to a tuple containing its score and a reference to it
-    let mut scored_candidates: Vec<_> = candidates
-        .iter()
-        .map(|candidate| {
-            let name = &candidate.i18n.get(&Language::En).unwrap().name;
-            let score = (jaro_winkler(query, name) * 1000.0) as i32;
-            (score, candidate)
-        })
-        .collect();
-
-    // 2. Sort the list by score in descending order.
-    // We use `std::cmp::Reverse` on the key (the score) for an efficient descending sort.
-    scored_candidates.sort_by_key(|(score, _)| Reverse(*score));
-
-    // 3. Take the top 25 and map them to the desired output format
-    scored_candidates
-        .into_iter()
-        .take(25)
-        .map(|(_score, candidate)| {
-            AutocompleteChoice::new(
-                &candidate.i18n.get(&Language::En).unwrap().name,
-                candidate.slug.clone(),
-            )
-        })
-        .collect::<Vec<_>>()
 }
 
 async fn get_statistics(ctx: Context<'_>, item_slug: &str) -> Result<Statistics, Error> {
@@ -111,9 +84,11 @@ pub async fn average(
     ctx: Context<'_>,
     #[description = "The item to to get the average price for"]
     #[autocomplete = find_best_matches]
+    #[rename = "item"]
     item_slug: String,
     #[description = "Mod Rank of the item, if applicable. Defaults to 0."] mod_rank: Option<i32>,
 ) -> CmdRet {
+    // Multiple statisticS for a single item
     let statistics = get_statistics(ctx, &item_slug)
         .await?
         .payload
@@ -127,7 +102,7 @@ pub async fn average(
         .await?
         .expect("Item should be found");
 
-    let item_name = item.i18n.get(&Language::En).unwrap().name.as_str();
+    let item_name = item.i18n_en().name.as_str();
 
     if statistics.is_empty() {
         ctx.send(
@@ -159,23 +134,21 @@ pub async fn average(
                         "".to_owned()
                     }
                 ))
-                .url(format!("https://warframe.market/items/{item_slug}"))
+                .url(market_url(&item_slug))
                 .field(
                     "Average",
-                    format!(
-                        "**`{}`** <:platinum:1405547068704952351>",
-                        statistic_info.average
-                    ),
+                    format!("**`{}`** {}", statistic_info.average, emojis::PLATINUM),
                     false,
                 )
                 .field(
                     "Moving Average",
                     format!(
-                        "**`{}`** <:platinum:1405547068704952351>",
+                        "**`{}`** {}",
                         statistic_info
                             .moving_avg
                             .map(|avg| avg.to_string())
-                            .unwrap_or_else(|| "N/A".into())
+                            .unwrap_or_else(|| "N/A".into()),
+                        emojis::PLATINUM
                     ),
                     false,
                 )
@@ -186,7 +159,7 @@ pub async fn average(
                 )
                 .thumbnail(format!(
                     "https://warframe.market/static/assets/{}",
-                    item.i18n.get(&Language::En).unwrap().icon
+                    item.i18n_en().icon
                 )),
         ),
     )

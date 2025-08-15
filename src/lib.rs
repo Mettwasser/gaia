@@ -1,5 +1,6 @@
 pub mod closest;
 pub mod commands;
+pub mod emojis;
 pub mod notifier;
 pub mod utils;
 
@@ -87,12 +88,16 @@ impl AppData {
 type FrameworkError<'a> = poise::FrameworkError<'a, AppData, Error>;
 
 pub async fn handle_error(err: FrameworkError<'_>) {
-    tracing::error!(error = %err);
-
     use poise::FrameworkError::*;
     match err {
-        Command { error, ctx, .. } => handle_command_error(error, ctx).await.unwrap(),
-        err => poise::builtins::on_error(err).await.unwrap(),
+        Command { error, ctx, .. } => {
+            tracing::warn!(error = %error, "Error in user command");
+            handle_command_error(error, ctx).await.unwrap()
+        },
+        err => {
+            tracing::error!(error = %err);
+            poise::builtins::on_error(err).await.unwrap()
+        },
     }
 }
 
