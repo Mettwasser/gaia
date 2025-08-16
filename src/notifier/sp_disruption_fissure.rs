@@ -8,13 +8,13 @@ use poise::serenity_prelude::{
     Mentionable,
     Timestamp,
 };
-use warframe::worldstate::{queryable::Fissure, Change, MissionType, Tier, TimedEvent};
+use warframe::worldstate::{Change, MissionType, Tier, TimedEvent, queryable::Fissure};
 
 use crate::{
-    notifier::{model::SubscriptionType, Notifier},
-    utils::{self, ApplyIf, DbExtension},
     AppData,
     Error,
+    notifier::{Notifier, model::SubscriptionType},
+    utils::{self, ApplyIf, DbExtension},
 };
 
 fn build_embed(fissure: &Fissure) -> CreateEmbed {
@@ -34,9 +34,9 @@ fn build_embed(fissure: &Fissure) -> CreateEmbed {
         .timestamp(Timestamp::now())
 }
 
-pub struct SteelPathDisruptionFissuresListener;
+pub struct SteelPathDisruptionFissures;
 
-impl Notifier for SteelPathDisruptionFissuresListener {
+impl Notifier for SteelPathDisruptionFissures {
     async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
         data.worldstate()
             .call_on_nested_update_with_state::<_, Fissure, _>(callback, (ctx, data.clone()))

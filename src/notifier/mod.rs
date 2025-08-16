@@ -9,13 +9,13 @@ use std::future::Future;
 use poise::serenity_prelude::{self};
 
 use crate::{
+    AppData,
+    Error,
     notifier::{
         eidolon_hunts::EidolonHunts,
         s_tier_arbitrations::STierArbitrationListener,
-        sp_disruption_fissure::SteelPathDisruptionFissuresListener,
+        sp_disruption_fissure::SteelPathDisruptionFissures,
     },
-    AppData,
-    Error,
 };
 
 pub trait Notifier {
@@ -25,9 +25,13 @@ pub trait Notifier {
     ) -> impl Future<Output = Result<(), Error>> + Send + 'static;
 }
 
-pub fn setup(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+pub async fn setup(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+    // we need to artificially delay task creation to not be blocked by cloudflare
+    // (for warframestat.us)
     spawn_notifier::<STierArbitrationListener>(&ctx, &data)?;
-    spawn_notifier::<SteelPathDisruptionFissuresListener>(&ctx, &data)?;
+
+    spawn_notifier::<SteelPathDisruptionFissures>(&ctx, &data)?;
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     spawn_notifier::<EidolonHunts>(&ctx, &data)?;
 
     Ok(())

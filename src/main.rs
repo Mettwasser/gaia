@@ -55,7 +55,7 @@ async fn main() -> Result<(), Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                notifier::setup(ctx.clone(), data.clone())?;
+                notifier::setup(ctx.clone(), data.clone()).await?;
 
                 Ok(data)
             })

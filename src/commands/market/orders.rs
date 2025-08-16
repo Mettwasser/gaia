@@ -122,14 +122,14 @@ pub async fn orders(
 
     let market = ctx.data().market();
 
-    let Some(orders) = market
+    let Some(orders_with_user) = market
         .fetch_orders_by_slug(&item_slug, Language::En)
         .await?
     else {
         return Err("Item not found".into());
     };
 
-    let orders = orders
+    let orders = orders_with_user
         .into_iter()
         .filter(|order| {
             order.order.r#type == "sell"
