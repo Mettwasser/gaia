@@ -25,7 +25,7 @@ use warframe::worldstate::{
     Opposite,
     SyndicateMission,
     TimedEvent,
-    queryable::{CambionDrift, Cetus, OrbVallis},
+    queryable::{CambionDrift, Cetus, OrbVallis, Syndicate},
 };
 
 use crate::{CmdRet, Context, Error, utils::embed};
@@ -52,7 +52,7 @@ pub async fn cetus(ctx: Context<'_>) -> CmdRet {
         "https://wiki.warframe.com/images/thumb/Plains_of_Eidolon.png/300px-Plains_of_Eidolon.png?c7c8c",
     )?;
 
-    send_worldstate(ctx, embed, "Ostrons", "Ostron Bounties").await?;
+    send_worldstate(ctx, embed, Syndicate::Ostrons, "Ostron Bounties").await?;
 
     Ok(())
 }
@@ -70,7 +70,13 @@ pub async fn orb_vallis(ctx: Context<'_>) -> CmdRet {
         "https://wiki.warframe.com/images/thumb/Orb_Vallis.png/300px-Orb_Vallis.png?7f8e7",
     )?;
 
-    send_worldstate(ctx, embed, "Solaris United", "Solaris United Bounties").await?;
+    send_worldstate(
+        ctx,
+        embed,
+        Syndicate::SolarisUnited,
+        "Solaris United Bounties",
+    )
+    .await?;
 
     Ok(())
 }
@@ -88,7 +94,7 @@ pub async fn cambion_drift(ctx: Context<'_>) -> CmdRet {
         "https://wiki.warframe.com/images/thumb/CambionDrift.jpg/300px-CambionDrift.jpg?f2516",
     )?;
 
-    send_worldstate(ctx, embed, "Entrati", "Entrati Bounties").await?;
+    send_worldstate(ctx, embed, Syndicate::Entrati, "Entrati Bounties").await?;
 
     Ok(())
 }
@@ -96,7 +102,7 @@ pub async fn cambion_drift(ctx: Context<'_>) -> CmdRet {
 async fn send_worldstate(
     ctx: Context<'_>,
     worldstate_embed: CreateEmbed,
-    syndicate_key: &'static str,
+    syndicate: Syndicate,
     bounty_title: &'static str,
 ) -> Result<(), Error> {
     let id = format!("{}_bounty", ctx.id());
@@ -116,7 +122,7 @@ async fn send_worldstate(
     let mut collector = ComponentInteractionCollector::new(ctx)
         .author_id(ctx.author().id)
         .channel_id(ctx.channel_id())
-        .timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(60))
         .filter(move |i| i.data.custom_id == id)
         .stream();
 
@@ -127,7 +133,7 @@ async fn send_worldstate(
             .fetch::<SyndicateMission>()
             .await?
             .into_iter()
-            .find(|bounty: &SyndicateMission| bounty.syndicate_key == syndicate_key)
+            .find(|bounty: &SyndicateMission| bounty.syndicate_key == syndicate)
             .ok_or("Not found")?;
 
         let state = BountyState {

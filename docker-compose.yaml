@@ -7,6 +7,22 @@ services:
     stdin_open: true
     restart: unless-stopped
     container_name: gaia
-
     env_file:
       - ./.env
+    networks:
+      - warframe-net
+    depends_on:
+      - warframestatus
+
+  warframestatus:
+    image: ghcr.io/wfcd/warframe-status:latest
+    container_name: warframestatus
+    restart: unless-stopped
+    expose:
+      - "3001"
+    networks:
+      - warframe-net
+
+networks:
+  warframe-net:
+    driver: bridge

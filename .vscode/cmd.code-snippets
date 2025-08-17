@@ -1,0 +1,16 @@
+{
+    "command": {
+        "prefix": "!cmd",
+        "body": [
+            "use poise::command;",
+            "",
+            "use crate::{CmdRet, Context};",
+            "",
+            "#[command(slash_command)]",
+            "pub async fn ${1:command}(ctx: Context<'_>) -> CmdRet {",
+            "    Ok(())",
+            "}",
+            "",
+        ]
+    }
+}

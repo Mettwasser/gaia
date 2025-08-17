@@ -49,7 +49,11 @@ impl AppData {
         )?;
 
         Ok(Self {
-            worldstate: worldstate::Client::new(),
+            #[cfg(debug_assertions)]
+            worldstate: worldstate::Client::default(),
+            #[cfg(not(debug_assertions))]
+            // warframestatus is the container name here
+            worldstate: worldstate::Client::new(reqwest::Client::new(), "http://warframestatus:3001".to_owned()),
             market: Arc::new(market::Client::new()),
             arbi_data: Arc::new(arbi_data),
             db: pool,

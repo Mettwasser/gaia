@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use chrono::{DateTime, Utc};
 use indoc::formatdoc;
 use itertools::Itertools;
 use poise::{
@@ -14,7 +13,7 @@ use poise::{
     },
 };
 use poise_paginator::{CancellationType, paginate};
-use warframe::market::{Item, Language, Status, queryable::OrderWithUser};
+use warframe::market::{Item, Language, OrderType, Status, queryable::OrderWithUser};
 
 use crate::{
     CmdRet,
@@ -61,11 +60,7 @@ async fn generate_order_embed(
         .field(
             "Last Updated",
             FormattedTimestamp::new(
-                order
-                    .updated_at
-                    .parse::<DateTime<Utc>>()
-                    .expect("`order.updated_at` should be a valid ISO 8601 (UTC) timestamp")
-                    .into(),
+                order.updated_at.into(),
                 Some(FormattedTimestampStyle::ShortDateTime),
             )
             .to_string(),
@@ -132,7 +127,7 @@ pub async fn orders(
     let orders = orders_with_user
         .into_iter()
         .filter(|order| {
-            order.order.r#type == "sell"
+            order.order.r#type == OrderType::Sell
                 && (!ingame_only || order.user.status == Status::Ingame)
                 && order.order.rank.unwrap_or(0) == rank
         })

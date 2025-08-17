@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, str::FromStr};
 
 use gaia::{
     AppData,
@@ -6,6 +6,7 @@ use gaia::{
     commands::{
         arbi::{upcoming_arbitration, upcoming_arbitrations},
         archon_hunt::archon_hunt,
+        event::events,
         market::market,
         worldstate::worldstate,
     },
@@ -19,13 +20,16 @@ use poise::{
     FrameworkError,
     serenity_prelude::{self, ClientBuilder, FullEvent, GatewayIntents, UserId},
 };
+use tracing::level_filters::LevelFilter;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     dotenv::dotenv().ok();
     tracing_subscriber::fmt()
         .pretty()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(LevelFilter::from_str(
+            &std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_owned()),
+        )?)
         .init();
 
     let token = std::env::var("BOT_TOKEN").expect("missing DISCORD_TOKEN");
@@ -44,6 +48,7 @@ async fn main() -> Result<(), Error> {
                 archon_hunt(),
                 notifier::commands::notifier(),
                 market(),
+                events(),
             ],
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))
