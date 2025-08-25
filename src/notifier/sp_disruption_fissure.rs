@@ -22,6 +22,7 @@ fn build_embed(fissure: &Fissure) -> CreateEmbed {
         .title("New Steel Path Disruption Fissure")
         .field("Node", &fissure.node, true)
         .field("Mission Type", &fissure.mission_type, true)
+        .field("Tier", fissure.tier.to_string(), true)
         .field(
             "Ends",
             FormattedTimestamp::new(
