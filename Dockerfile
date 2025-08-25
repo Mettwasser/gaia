@@ -1,10 +1,17 @@
 FROM rust:latest AS builder
 
+WORKDIR /app
+
 COPY . .
 
+ENV DATABASE_URL=sqlite://dev.db
 ENV SQLX_OFFLINE=true
 
 RUN cargo install sqlx-cli --no-default-features --features native-tls,sqlite
+
+RUN cargo sqlx database create
+
+RUN cargo sqlx migrate run
 
 RUN cargo sqlx prepare
 
