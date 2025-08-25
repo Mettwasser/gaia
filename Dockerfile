@@ -2,6 +2,8 @@ FROM rust:latest AS builder
 
 COPY . .
 
+ENV DATABASE_URL=sqlite://dev.db
+
 RUN cargo build --release
 
 # --------------------------
