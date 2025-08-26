@@ -1,7 +1,5 @@
 FROM rust:latest AS builder
 
-WORKDIR /app
-
 COPY . .
 
 ENV DATABASE_URL=sqlite://dev.db
