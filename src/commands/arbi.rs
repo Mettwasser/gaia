@@ -2,14 +2,14 @@ use std::time::Duration;
 
 use arbitration_data::model::mapped::Tier;
 use poise::{
-    command,
-    serenity_prelude::{CreateEmbed, FormattedTimestamp, FormattedTimestampStyle, Timestamp},
     ChoiceParameter,
     CreateReply,
+    command,
+    serenity_prelude::{CreateEmbed, FormattedTimestamp, FormattedTimestampStyle, Timestamp},
 };
-use poise_paginator::{paginate, CancellationType};
+use poise_paginator::{CancellationType, paginate};
 
-use crate::{utils::embed, CmdRet, Context, Error};
+use crate::{CmdRet, Context, Error, utils::embed};
 
 #[derive(ChoiceParameter, derive_more::Display, Clone, Debug)]
 pub enum UserArbitrationTier {

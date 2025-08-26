@@ -17,6 +17,6 @@ jobs:
 
             - name: Build and push the image
               run: |
-                docker login --username mettwasser --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+                docker login --username mettwasser --password ${{ secrets.GHCR_LOGIN }} ghcr.io
                 docker build . --tag ghcr.io/mettwasser/gaia:latest
                 docker push ghcr.io/mettwasser/gaia:latest
