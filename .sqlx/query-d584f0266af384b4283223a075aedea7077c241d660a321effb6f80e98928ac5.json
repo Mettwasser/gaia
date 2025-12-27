@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT \n                server_id,\n                notification_channel_id,\n                role_id_to_mention as \"role_id_to_mention: RoleIdToMention\",\n                subscription_type as \"subscription_type: SubscriptionType\",\n                created_at as \"created_at: chrono::DateTime<Utc>\",\n                modified_at as \"modified_at: chrono::DateTime<Utc>\"\n            FROM server_subscriptions\n            WHERE server_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "server_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "notification_channel_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "role_id_to_mention: RoleIdToMention",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "subscription_type: SubscriptionType",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at: chrono::DateTime<Utc>",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "modified_at: chrono::DateTime<Utc>",
+        "ordinal": 5,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "d584f0266af384b4283223a075aedea7077c241d660a321effb6f80e98928ac5"
+}

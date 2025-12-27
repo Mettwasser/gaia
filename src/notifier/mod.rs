@@ -1,37 +1,46 @@
 pub mod commands;
 pub mod eidolon_hunts;
+pub mod error;
 pub mod model;
 pub mod s_tier_arbitrations;
 pub mod sp_disruption_fissure;
 
-use std::future::Future;
+use std::{fmt::Debug, future::Future};
 
 use poise::serenity_prelude::{self};
+use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 
 use crate::{
     AppData,
     Error,
     notifier::{
         eidolon_hunts::EidolonHunts,
+        error::{NotifierError, handle_notifier_error},
         s_tier_arbitrations::STierArbitrationListener,
         sp_disruption_fissure::SteelPathDisruptionFissures,
     },
 };
 
+#[derive(Debug, Clone)]
+pub struct ListenerCallbackData {
+    ctx: serenity_prelude::Context,
+    data: AppData,
+    tx: UnboundedSender<NotifierError>,
+}
+
 pub trait Notifier {
     fn run(
         ctx: serenity_prelude::Context,
         data: AppData,
+        tx: UnboundedSender<NotifierError>,
     ) -> impl Future<Output = Result<(), Error>> + Send + 'static;
 }
 
 pub async fn setup(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
-    // we need to artificially delay task creation to not be blocked by cloudflare
-    // (for warframestat.us)
     spawn_notifier::<STierArbitrationListener>(&ctx, &data)?;
 
     spawn_notifier::<SteelPathDisruptionFissures>(&ctx, &data)?;
-    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
     spawn_notifier::<EidolonHunts>(&ctx, &data)?;
 
     Ok(())
@@ -44,8 +53,11 @@ where
     let ctx = ctx.clone();
     let data = data.clone();
 
+    let (tx, rx) = unbounded_channel::<NotifierError>();
+
+    tokio::spawn(handle_notifier_error(rx, data.clone()));
     tokio::spawn(async move {
-        if let Err(e) = T::run(ctx, data).await {
+        if let Err(e) = T::run(ctx, data, tx).await {
             tracing::error!(error = %e, "Notifier encountered an error");
         }
     });

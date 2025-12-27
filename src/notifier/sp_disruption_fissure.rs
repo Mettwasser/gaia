@@ -8,12 +8,13 @@ use poise::serenity_prelude::{
     Mentionable,
     Timestamp,
 };
+use tokio::sync::mpsc::UnboundedSender;
 use warframe::worldstate::{Change, MissionType, Tier, TimedEvent, queryable::Fissure};
 
 use crate::{
     AppData,
     Error,
-    notifier::{Notifier, model::SubscriptionType},
+    notifier::{ListenerCallbackData, Notifier, error::NotifierError, model::SubscriptionType},
     utils::{self, ApplyIf, DbExtension},
 };
 
@@ -38,16 +39,27 @@ fn build_embed(fissure: &Fissure) -> CreateEmbed {
 pub struct SteelPathDisruptionFissures;
 
 impl Notifier for SteelPathDisruptionFissures {
-    async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+    async fn run(
+        ctx: serenity_prelude::Context,
+        data: AppData,
+        tx: UnboundedSender<NotifierError>,
+    ) -> Result<(), Error> {
         data.worldstate()
-            .call_on_nested_update_with_state::<_, Fissure, _>(callback, (ctx, data.clone()))
+            .call_on_nested_update_with_state::<_, Fissure, _>(
+                callback,
+                ListenerCallbackData {
+                    ctx,
+                    data: data.clone(),
+                    tx,
+                },
+            )
             .await
             .map_err(Error::from)
     }
 }
 
 async fn callback(
-    (ctx, data): (serenity_prelude::Context, AppData),
+    ListenerCallbackData { ctx, data, tx }: ListenerCallbackData,
     fissure: &Fissure,
     change: Change,
 ) {
@@ -78,15 +90,12 @@ async fn callback(
                 )
                 .await;
 
-            if let Err(e) = &result {
-                tracing::error!(
-                    channel_id = %sub.notification_channel_id,
-                    error = %e,
-                    "Failed to send notification for Steel Path Disruption Fissure",
-                );
+            if let Err(e) = result {
+                let _ = tx.send(NotifierError {
+                    channel_id: *sub.notification_channel_id,
+                    error: e.into(),
+                });
             }
-
-            result
         })
         .collect::<Vec<_>>();
 
@@ -102,6 +111,6 @@ async fn callback(
 fn is_correct_fissure(fissure: &Fissure, change: Change) -> bool {
     change == Change::Added
         && fissure.tier != Tier::Requiem
-        && fissure.mission_key == MissionType::Disruption
+        && fissure.mission_type_key == MissionType::Disruption
         && fissure.is_hard
 }

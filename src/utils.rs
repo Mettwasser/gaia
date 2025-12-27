@@ -2,18 +2,18 @@ use std::future::Future;
 
 use chrono::{DateTime, Utc};
 use poise::serenity_prelude::{
-    model::timestamp::InvalidTimestamp,
     CreateEmbed,
     FormattedTimestamp,
     FormattedTimestampStyle,
     Timestamp,
+    model::timestamp::InvalidTimestamp,
 };
 use sqlx::SqlitePool;
 
 use crate::{
-    notifier::model::{RoleIdToMention, ServerSubscription, SubscriptionType},
     Context,
     DEFAULT_COLOR,
+    notifier::model::{RoleIdToMention, ServerSubscription, SubscriptionType},
 };
 
 pub fn to_timestamp(
@@ -47,11 +47,7 @@ impl<T> ApplyIf for T {
         F: FnOnce(Self) -> U,
         U: Into<Self>,
     {
-        if condition {
-            f(self).into()
-        } else {
-            self
-        }
+        if condition { f(self).into() } else { self }
     }
 
     fn apply_optionally<F, I, U>(self, optional: Option<I>, f: F) -> Self
@@ -109,6 +105,11 @@ pub trait DbExtension {
     fn delete_all_subscriptions(
         &self,
         guild_id: i64,
+    ) -> impl Future<Output = Result<(), sqlx::Error>> + Send;
+
+    fn delete_all_by_channel(
+        &self,
+        channel_id: i64,
     ) -> impl Future<Output = Result<(), sqlx::Error>> + Send;
 }
 
@@ -230,6 +231,24 @@ impl DbExtension for SqlitePool {
             WHERE server_id = $1;
             ",
             guild_id
+        )
+        .execute(tx.as_mut())
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(())
+    }
+
+    async fn delete_all_by_channel(&self, channel_id: i64) -> Result<(), sqlx::Error> {
+        let mut tx = self.begin().await?;
+
+        sqlx::query!(
+            "
+            DELETE FROM server_subscriptions
+            WHERE notification_channel_id = $1;
+            ",
+            channel_id
         )
         .execute(tx.as_mut())
         .await?;

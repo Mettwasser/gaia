@@ -10,12 +10,13 @@ use poise::serenity_prelude::{
     Mentionable,
     Timestamp,
 };
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::{
-    notifier::{model::SubscriptionType, Notifier},
-    utils::{self, ApplyIf, DbExtension},
     AppData,
     Error,
+    notifier::{Notifier, error::NotifierError, model::SubscriptionType},
+    utils::{self, ApplyIf, DbExtension},
 };
 
 fn build_embed(arbi: &ArbitrationInfo) -> CreateEmbed {
@@ -38,7 +39,11 @@ fn build_embed(arbi: &ArbitrationInfo) -> CreateEmbed {
 pub struct STierArbitrationListener;
 
 impl Notifier for STierArbitrationListener {
-    async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+    async fn run(
+        ctx: serenity_prelude::Context,
+        data: AppData,
+        tx: UnboundedSender<NotifierError>,
+    ) -> Result<(), Error> {
         while let Ok(next_arbi) = data.arbi_data().upcoming_by_tier(arbitration_data::Tier::S) {
             if next_arbi.activation > Utc::now() {
                 tracing::info!(time_to_sleep = ?(next_arbi.activation - Utc::now()).to_std()?, upcoming_arbi = ?next_arbi);
@@ -67,15 +72,12 @@ impl Notifier for STierArbitrationListener {
                         )
                         .await;
 
-                    if let Err(e) = &result {
-                        tracing::error!(
-                            channel_id = %sub.notification_channel_id,
-                            error = %e,
-                            "Failed to send notification for S-Tier Arbitration",
-                        );
+                    if let Err(e) = result {
+                        let _ = tx.send(NotifierError {
+                            channel_id: *sub.notification_channel_id,
+                            error: e.into(),
+                        });
                     }
-
-                    result
                 })
                 .collect::<Vec<_>>();
 

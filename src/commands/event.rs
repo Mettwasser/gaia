@@ -43,7 +43,7 @@ pub async fn events(ctx: Context<'_>) -> CmdRet {
                         .map(|reward|
                             format!(
                                 "- {}{}",
-                                reward.item_string,
+                                reward.items.join(", "),
                                 if reward.credits > 0 {
                                     format!(" + {} {}", reward.credits, emojis::CREDITS)
                                 } else {

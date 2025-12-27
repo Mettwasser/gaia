@@ -1,32 +1,31 @@
-FROM rust:latest AS builder
+FROM lukemathwalker/cargo-chef:latest-rust-1-bookworm AS chef
+WORKDIR /app
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+
+# Dependency cache
+RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
 
-ENV DATABASE_URL=sqlite://dev.db
+# Tell SQLx to use the .sqlx folder we copied instead of trying to connect to a DB
 ENV SQLX_OFFLINE=true
 
-RUN cargo install sqlx-cli --no-default-features --features native-tls,sqlite
-
-RUN cargo sqlx database create
-
-RUN cargo sqlx migrate run
-
-RUN cargo sqlx prepare
-
+# Build the final binary
 RUN cargo build --release
+# -------------------
 
-# --------------------------
 FROM debian:bookworm-slim
+WORKDIR /home/appuser
+COPY --from=builder /app/target/release/gaia .
+COPY --from=builder /app/migrations ./migrations
 
+# required by idk.. poise/serenity (?)
 RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /home/appuser
-
-# Needed for DNS resolution - can't access api.warframestat.us otherwise
-RUN apt-get update && apt-get install -y curl dnsutils
-
-
-COPY --from=builder ./target/release/gaia .
-COPY --from=builder ./migrations ./migrations
-
-CMD ["./gaia"]
+ENTRYPOINT ["./gaia"]

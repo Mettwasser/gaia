@@ -32,7 +32,7 @@ async fn main() -> Result<(), Error> {
         )?)
         .init();
 
-    let token = std::env::var("BOT_TOKEN").expect("missing DISCORD_TOKEN");
+    let token = std::env::var("BOT_TOKEN").expect("missing BOT_TOKEN env variable");
     let intents = GatewayIntents::non_privileged();
 
     let db = init_db().await?;

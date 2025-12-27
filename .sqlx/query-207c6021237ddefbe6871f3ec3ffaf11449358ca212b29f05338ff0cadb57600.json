@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            DELETE FROM server_subscriptions\n            WHERE server_id = $1\n                AND subscription_type = $2;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "207c6021237ddefbe6871f3ec3ffaf11449358ca212b29f05338ff0cadb57600"
+}

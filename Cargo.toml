@@ -6,35 +6,33 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = { version = "0.4.41", features = ["serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
 dotenv = "0.15.0"
-log = "0.4.27"
+log = "0.4.29"
 poise = { version = "0.6.1", features = ["handle_panics"] }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.141"
-tokio = { version = "1.46.1", features = ["full"] }
-tracing = "0.1.41"
-warframe = { git = "https://github.com/WFCD/warframe.rs", branch = "v8", features = [
-    "full",
-] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.148"
+tokio = { version = "1.48.0", features = ["full"] }
+tracing = "0.1.44"
+warframe = "8.0.1"
 arbitration_data = { git = "https://github.com/Mettwasser/arbitration_data", version = "0.2.0" }
 poise_paginator = { git = "https://github.com/Mettwasser/poise_paginator", version = "0.1.1" }
-csv = "1.3.1"
-derive_more = { version = "2.0.1", features = ["full"] }
+csv = "1.4.0"
+derive_more = { version = "2.1.1", features = ["full"] }
 itertools = "0.14.0"
 strsim = "0.11.1"
-thiserror = "2.0.12"
-tracing-subscriber = "0.3.18"
-moka = { version = "0.12.10", features = ["future"] }
+thiserror = "2.0.17"
+tracing-subscriber = "0.3.22"
+moka = { version = "0.12.12", features = ["future"] }
 futures = "0.3.31"
-indoc = "2.0.6"
+indoc = "2.0.7"
 strum = { version = "0.27.2", features = ["derive"] }
 sqlx = { version = "0.8.6", features = [
     "sqlite",
     "runtime-tokio-rustls",
     "chrono",
 ] }
-reqwest = "0.12.23"
+reqwest = "0.12.28"
 
 [lints.rust]
 rust_2018_idioms = "deny"

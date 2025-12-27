@@ -8,13 +8,14 @@ use poise::serenity_prelude::{
     Mentionable,
     Timestamp,
 };
-use warframe::worldstate::{queryable::Cetus, CetusState, TimedEvent};
+use tokio::sync::mpsc::UnboundedSender;
+use warframe::worldstate::{CetusState, TimedEvent, queryable::Cetus};
 
 use crate::{
-    notifier::{model::SubscriptionType, Notifier},
-    utils::{self, ApplyIf, DbExtension},
     AppData,
     Error,
+    notifier::{ListenerCallbackData, Notifier, error::NotifierError, model::SubscriptionType},
+    utils::{self, ApplyIf, DbExtension},
 };
 
 fn build_embed(cetus: &Cetus) -> CreateEmbed {
@@ -38,15 +39,30 @@ fn build_embed(cetus: &Cetus) -> CreateEmbed {
 pub struct EidolonHunts;
 
 impl Notifier for EidolonHunts {
-    async fn run(ctx: serenity_prelude::Context, data: AppData) -> Result<(), Error> {
+    async fn run(
+        ctx: serenity_prelude::Context,
+        data: AppData,
+        tx: UnboundedSender<NotifierError>,
+    ) -> Result<(), Error> {
         data.worldstate()
-            .call_on_update_with_state::<_, Cetus, _>(callback, (ctx, data.clone()))
+            .call_on_update_with_state::<_, Cetus, _>(
+                callback,
+                ListenerCallbackData {
+                    ctx,
+                    data: data.clone(),
+                    tx,
+                },
+            )
             .await
             .map_err(Error::from)
     }
 }
 
-async fn callback((ctx, data): (serenity_prelude::Context, AppData), _: &Cetus, cetus: &Cetus) {
+async fn callback(
+    ListenerCallbackData { ctx, data, tx }: ListenerCallbackData,
+    _: &Cetus,
+    cetus: &Cetus,
+) {
     if cetus.state == CetusState::Day {
         return;
     }
@@ -74,15 +90,12 @@ async fn callback((ctx, data): (serenity_prelude::Context, AppData), _: &Cetus, 
                 )
                 .await;
 
-            if let Err(e) = &result {
-                tracing::error!(
-                    channel_id = %sub.notification_channel_id,
-                    error = %e,
-                    "Failed to send notification for Eidolon Hunt",
-                );
+            if let Err(e) = result {
+                let _ = tx.send(NotifierError {
+                    channel_id: *sub.notification_channel_id,
+                    error: e.into(),
+                });
             }
-
-            result
         })
         .collect::<Vec<_>>();
 

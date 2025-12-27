@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            DELETE FROM server_subscriptions\n            WHERE notification_channel_id = $1;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "3d87e39d338223c5a0c1252cd209074f60a4109d9b0761a7efff04ce928750b2"
+}

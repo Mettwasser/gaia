@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO server_subscriptions (\n                server_id,\n                notification_channel_id,\n                subscription_type,\n                role_id_to_mention\n            )\n            VALUES ($1, $2, $3, $4)\n            ON CONFLICT (server_id, subscription_type)\n            DO UPDATE\n            SET modified_at = CURRENT_TIMESTAMP,\n                notification_channel_id = $2,\n                subscription_type = $3,\n                role_id_to_mention = $4;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "c27b5a361ee5f92845ebc7794c049f958db3fd3704cd1c24fdcbbbbfec363c2d"
+}
