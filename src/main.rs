@@ -20,6 +20,7 @@ use poise::{
     FrameworkError,
     serenity_prelude::{self, ClientBuilder, FullEvent, GatewayIntents, UserId},
 };
+use tokio::signal;
 use tracing::level_filters::LevelFilter;
 
 #[tokio::main]
@@ -38,6 +39,7 @@ async fn main() -> Result<(), Error> {
     let db = init_db().await?;
 
     let data = AppData::try_new_auto(db)?;
+    let data_clone = data.clone();
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -60,9 +62,9 @@ async fn main() -> Result<(), Error> {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                notifier::setup(ctx.clone(), data.clone()).await?;
+                notifier::setup(ctx.clone(), data_clone.clone()).await?;
 
-                Ok(data)
+                Ok(data_clone.clone())
             })
         })
         .build();
@@ -72,7 +74,17 @@ async fn main() -> Result<(), Error> {
         .await
         .unwrap();
 
-    client.start().await.unwrap();
+    tokio::select! {
+        res = client.start() => {
+            if let Err(why) = res {
+                tracing::error!("Client error: {:?}", why);
+            }
+        },
+        _ = signal::ctrl_c() => {
+            tracing::info!("Shutting down gracefully...");
+            data.db().close().await;
+        },
+    }
 
     Ok(())
 }
