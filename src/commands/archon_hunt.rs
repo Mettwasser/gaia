@@ -2,16 +2,16 @@ use chrono::{DateTime, Utc};
 use indoc::formatdoc;
 use itertools::Itertools;
 use poise::{
+    CreateReply,
     command,
     serenity_prelude::{CreateEmbed, FormattedTimestampStyle},
-    CreateReply,
 };
-use warframe::worldstate::{queryable::ArchonHunt, ArchonHuntMission, TimedEvent};
+use warframe::worldstate::{ArchonHuntMission, TimedEvent, queryable::ArchonHunt};
 
 use crate::{
-    utils::{embed, to_timestamp},
     CmdRet,
     Context,
+    utils::{embed, to_timestamp},
 };
 
 #[derive(strum::Display)]

@@ -3543,9 +3543,9 @@ dependencies = [
 
 [[package]]
 name = "warframe"
-version = "8.0.1"
+version = "9.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c56e1fe6d9f6f14fd4aae0ec31ac0e4a213a8161bff65f0ca6831dff565cbf22"
+checksum = "16ceea29df1a6b283833fe1433d247a267f58eb275b3b07c4b947fa1e2a7fbf5"
 dependencies = [
  "chrono",
  "derive_builder",
@@ -3569,9 +3569,9 @@ dependencies = [
 
 [[package]]
 name = "warframe-macros"
-version = "8.0.1"
+version = "9.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cfc8ab3b7ed88a715697db7263e1b98399df2e3f56766e777572589e300e3da"
+checksum = "2b4bc22e9f21893c8700c01a1867ba7669d6a022dfe8c51cbfc03b420b596006"
 dependencies = [
  "heck",
  "manyhow",
@@ -3742,7 +3742,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

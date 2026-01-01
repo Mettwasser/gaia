@@ -3,7 +3,7 @@ use std::ops::Deref;
 use chrono::Utc;
 use derive_more::Display;
 use poise::serenity_prelude::{ChannelId, GuildId, RoleId};
-use sqlx::{error::BoxDynError, Decode, Sqlite};
+use sqlx::{Decode, Sqlite, error::BoxDynError};
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, sqlx::Type, poise::ChoiceParameter,

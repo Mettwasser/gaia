@@ -1,15 +1,15 @@
 use poise::{
-    command,
-    serenity_prelude::{GuildChannel, Mentionable, RoleId},
     ChoiceParameter,
     CreateReply,
+    command,
+    serenity_prelude::{GuildChannel, Mentionable, RoleId},
 };
 
 use crate::{
-    notifier::model::SubscriptionType,
-    utils::{self, ContextExt, DbExtension},
     CmdRet,
     Context,
+    notifier::model::SubscriptionType,
+    utils::{self, ContextExt, DbExtension},
 };
 
 #[command(

@@ -14,7 +14,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 tokio = { version = "1.48.0", features = ["full"] }
 tracing = "0.1.44"
-warframe = "8.0.1"
+warframe = "9.0.1"
 arbitration_data = { git = "https://github.com/Mettwasser/arbitration_data", version = "0.2.0" }
 poise_paginator = { git = "https://github.com/Mettwasser/poise_paginator", version = "0.1.1" }
 csv = "1.4.0"
